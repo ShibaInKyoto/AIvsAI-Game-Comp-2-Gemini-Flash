@@ -48,6 +48,10 @@ set(VOIDFALL_SOURCES
     src/core/Random.cpp
     src/core/Config.cpp
     src/core/SaveSystem.cpp
+    src/core/math/Splines.cpp
+    src/core/math/Noise.cpp
+    src/core/math/Geometry.cpp
+    src/core/ecs/Registry.cpp
     src/engine/Input.cpp
     src/engine/Camera.cpp
     src/engine/AudioSynth.cpp
@@ -55,6 +59,19 @@ set(VOIDFALL_SOURCES
     src/engine/ParticleSystem.cpp
     src/engine/Starfield.cpp
     src/engine/PostProcessing.cpp
+    src/engine/physics/Quadtree.cpp
+    src/engine/physics/RigidBody.cpp
+    src/engine/audio/DSPCore.cpp
+    src/engine/audio/VoiceSynthesizer.cpp
+    src/engine/ai/BehaviorTree.cpp
+    src/engine/procgen/DungeonGenerator.cpp
+    src/engine/procgen/WeaponGenerator.cpp
+    src/engine/render/Mesh.cpp
+    src/engine/render/Rasterizer.cpp
+    src/engine/render/ProceduralMech3D.cpp
+    src/engine/animation/Skeleton.cpp
+    src/engine/scripting/Compiler.cpp
+    src/engine/scripting/VirtualMachine.cpp
     src/gameplay/Reactor.cpp
     src/gameplay/Weapons.cpp
     src/gameplay/PlayerMech.cpp
@@ -63,11 +80,23 @@ set(VOIDFALL_SOURCES
     src/gameplay/Bosses.cpp
     src/gameplay/SectorManager.cpp
     src/gameplay/SectorMap.cpp
+    src/gameplay/EndlessSurvival.cpp
     src/gameplay/UpgradeTree.cpp
     src/gameplay/RelicInventory.cpp
     src/gameplay/Achievements.cpp
     src/gameplay/Drones.cpp
     src/gameplay/FiringRange.cpp
+    src/gameplay/factions/FactionSystem.cpp
+    src/gameplay/economy/TradeMarket.cpp
+    src/gameplay/galaxy/GalaxyGenerator.cpp
+    src/gameplay/mech/PartCatalog.cpp
+    src/gameplay/mech/MechAssembly.cpp
+    src/gameplay/story/DialogueEngine.cpp
+    src/gameplay/story/CampaignManager.cpp
+    src/engine/ai/FlockingDirector.cpp
+    src/engine/replay/FlightRecorder.cpp
+    src/gameplay/environment/HazardEngine.cpp
+    src/engine/render/ShaderPipeline.cpp
     src/ui/HUD.cpp
     src/ui/Menu.cpp
 )
@@ -97,13 +126,47 @@ if(VOIDFALL_BUILD_TESTS)
         tests/test_collision.cpp
         tests/test_saves.cpp
         tests/test_drones.cpp
+        tests/test_engine_expanded.cpp
+        tests/test_rasterizer.cpp
+        tests/test_scripting_vm.cpp
+        tests/test_galaxy_economy.cpp
+        tests/test_mech_assembly.cpp
+        tests/test_campaign_dialogue.cpp
+        tests/test_flocking_squad.cpp
+        tests/test_flight_recorder.cpp
+        tests/test_hazards_and_shaders.cpp
         src/core/Random.cpp
         src/core/Config.cpp
         src/core/SaveSystem.cpp
+        src/core/math/Splines.cpp
+        src/core/math/Noise.cpp
+        src/core/math/Geometry.cpp
+        src/core/ecs/Registry.cpp
         src/engine/ParticleSystem.cpp
+        src/engine/physics/Quadtree.cpp
+        src/engine/physics/RigidBody.cpp
+        src/engine/audio/DSPCore.cpp
+        src/engine/procgen/WeaponGenerator.cpp
+        src/engine/render/Mesh.cpp
+        src/engine/render/Rasterizer.cpp
+        src/engine/render/ProceduralMech3D.cpp
+        src/engine/animation/Skeleton.cpp
+        src/engine/scripting/Compiler.cpp
+        src/engine/scripting/VirtualMachine.cpp
         src/gameplay/Reactor.cpp
         src/gameplay/Weapons.cpp
         src/gameplay/Drones.cpp
+        src/gameplay/factions/FactionSystem.cpp
+        src/gameplay/economy/TradeMarket.cpp
+        src/gameplay/galaxy/GalaxyGenerator.cpp
+        src/gameplay/mech/PartCatalog.cpp
+        src/gameplay/mech/MechAssembly.cpp
+        src/gameplay/story/DialogueEngine.cpp
+        src/gameplay/story/CampaignManager.cpp
+        src/engine/ai/FlockingDirector.cpp
+        src/engine/replay/FlightRecorder.cpp
+        src/gameplay/environment/HazardEngine.cpp
+        src/engine/render/ShaderPipeline.cpp
     )
 
     add_executable(voidfall_tests ${TEST_SOURCES})

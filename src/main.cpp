@@ -20,6 +20,14 @@
 #include "gameplay/Achievements.h"
 #include "gameplay/Drones.h"
 #include "gameplay/FiringRange.h"
+#include "gameplay/EndlessSurvival.h"
+#include "engine/audio/VoiceSynthesizer.h"
+#include "gameplay/story/DialogueEngine.h"
+#include "gameplay/story/CampaignManager.h"
+#include "engine/replay/FlightRecorder.h"
+#include "gameplay/environment/HazardEngine.h"
+#include "engine/render/ShaderPipeline.h"
+#include "engine/ai/FlockingDirector.h"
 #include "ui/HUD.h"
 #include "ui/Menu.h"
 
@@ -40,6 +48,7 @@ int main(int argc, char** argv) {
     SaveSystem::Load();
     AchievementSystem::Initialize();
     AudioSynth::Initialize();
+    Audio::VoiceSynthesizer::Initialize();
     MusicEngine::Initialize();
     PostProcessing::Initialize(cfg.screenWidth, cfg.screenHeight);
 
@@ -55,14 +64,17 @@ int main(int argc, char** argv) {
     SectorManager sector;
     SectorMap sectorMap;
     FiringRange firingRange;
+    EndlessSurvival endless;
     RelicInventory relics;
 
     GameState state = cfg.autotestMode ? GameState::SECTOR_EXPEDITION : GameState::TITLE_SCREEN;
 
     int titleSelection = 0;
+    int hangarTab = 0; // 0 = Outfitter, 1 = Engineering
     int hangarFrame = 0;
     int hangarPrim = 0;
     int hangarOrd = 0;
+    int hangarUpgrade = 0;
 
     int mapSelectedNode = 0;
     std::vector<UpgradeCard> draftCards;
@@ -102,15 +114,15 @@ int main(int argc, char** argv) {
         switch (state) {
             case GameState::TITLE_SCREEN: {
                 MusicEngine::SetIntensity(MusicIntensity::AMBIENT);
-                if (input.menuUp) { titleSelection = (titleSelection + 5) % 6; AudioSynth::Play(SoundID::POWER_SHIFT); }
-                if (input.menuDown) { titleSelection = (titleSelection + 1) % 6; AudioSynth::Play(SoundID::POWER_SHIFT); }
+                if (input.menuUp) { titleSelection = (titleSelection + 6) % 7; AudioSynth::Play(SoundID::POWER_SHIFT); }
+                if (input.menuDown) { titleSelection = (titleSelection + 1) % 7; AudioSynth::Play(SoundID::POWER_SHIFT); }
                 if (input.menuConfirm) {
                     AudioSynth::Play(SoundID::UPGRADE_SELECT);
                     if (titleSelection == 0) {
                         // Launch Campaign via Sector Map
                         player.Reset(static_cast<MechFrame>(hangarFrame));
                         player.SetPrimaryWeapon(static_cast<WeaponType>(hangarPrim));
-                        player.SetOrdnanceWeapon(static_cast<WeaponType>(hangarOrd + 4));
+                        player.SetOrdnanceWeapon(static_cast<WeaponType>(hangarOrd == 3 ? static_cast<int>(WeaponType::NUCLEAR_CLUSTER_TORPEDO) : (hangarOrd + 5)));
                         sectorMap.Generate(1);
                         mapSelectedNode = 0;
                         drones.Clear();
@@ -121,6 +133,21 @@ int main(int argc, char** argv) {
                         SaveSystem::Save();
                         state = GameState::SECTOR_MAP;
                     } else if (titleSelection == 1) {
+                        // Endless Protocol (Survival Horde)
+                        player.Reset(static_cast<MechFrame>(hangarFrame));
+                        player.SetPrimaryWeapon(static_cast<WeaponType>(hangarPrim));
+                        player.SetOrdnanceWeapon(static_cast<WeaponType>(hangarOrd == 3 ? static_cast<int>(WeaponType::NUCLEAR_CLUSTER_TORPEDO) : (hangarOrd + 5)));
+                        endless.Init();
+                        enemies.Clear();
+                        projManager.Clear();
+                        particles.Clear();
+                        drones.Clear();
+                        drones.AddDrone(DroneType::ATTACK_DRONE);
+                        relics.Clear();
+                        runTime = 0.0f;
+                        MusicEngine::SetIntensity(MusicIntensity::COMBAT_HIGH);
+                        state = GameState::ENDLESS_SURVIVAL;
+                    } else if (titleSelection == 2) {
                         // Titan Colosseum (Direct Boss Rush)
                         player.Reset(static_cast<MechFrame>(hangarFrame));
                         sector.InitSector(SectorType::ASTEROID_OUTPOST, 1);
@@ -134,7 +161,7 @@ int main(int argc, char** argv) {
                         runTime = 0.0f;
                         MusicEngine::SetIntensity(MusicIntensity::BOSS_BATTLE);
                         state = GameState::SECTOR_EXPEDITION;
-                    } else if (titleSelection == 2) {
+                    } else if (titleSelection == 3) {
                         // Firing Range Sandbox
                         player.Reset(static_cast<MechFrame>(hangarFrame));
                         firingRange.Init();
@@ -142,14 +169,91 @@ int main(int argc, char** argv) {
                         projManager.Clear();
                         particles.Clear();
                         state = GameState::FIRING_RANGE;
-                    } else if (titleSelection == 3) {
-                        state = GameState::HANGAR_LOADOUT;
                     } else if (titleSelection == 4) {
-                        state = GameState::CODEX;
+                        state = GameState::HANGAR_LOADOUT;
                     } else if (titleSelection == 5) {
+                        state = GameState::CODEX;
+                    } else if (titleSelection == 6) {
                         CloseWindow();
                         return 0;
                     }
+                }
+                break;
+            }
+
+            case GameState::ENDLESS_SURVIVAL: {
+                if (input.pause) {
+                    state = GameState::PAUSED;
+                    break;
+                }
+
+                runTime += dt;
+                endless.Update(dt, player, enemies, boss, projManager, particles);
+                drones.Update(dt, player.GetPosition(), enemies, projManager, particles);
+                player.Update(dt, projManager, particles);
+                enemies.Update(dt, player, projManager, particles);
+                boss.Update(dt, player, projManager, particles);
+                projManager.Update(dt);
+                particles.Update(dt);
+                starfield.Update(player.GetVelocity(), dt);
+                camera.Update(player.GetPosition(), input.mouseWorldPos, dt);
+
+                if (!player.IsAlive() || endless.IsExtracted()) {
+                    camera.AddTrauma(0.7f);
+                    hitAberration = 0.8f;
+                    SaveSystem::UpdateEndlessRecord(endless.GetCurrentWave(), endless.GetSurvivalTime(), endless.GetTotalKills(), player.GetNaniteCores());
+                    state = GameState::GAME_OVER;
+                }
+                break;
+            }
+
+            case GameState::HANGAR_LOADOUT: {
+                if (IsKeyPressed(KEY_TAB)) {
+                    hangarTab = 1 - hangarTab;
+                    AudioSynth::Play(SoundID::POWER_SHIFT);
+                }
+
+                if (hangarTab == 0) {
+                    // Outfitter tab
+                    if (input.menuUp) hangarFrame = (hangarFrame + 3) % 4;
+                    if (input.menuDown) hangarFrame = (hangarFrame + 1) % 4;
+                    if (input.menuLeft) hangarPrim = (hangarPrim + 4) % 5;
+                    if (input.menuRight) hangarPrim = (hangarPrim + 1) % 5;
+
+                    if (IsKeyPressed(KEY_Z)) hangarOrd = (hangarOrd + 3) % 4;
+                    if (IsKeyPressed(KEY_X)) hangarOrd = (hangarOrd + 1) % 4;
+
+                    if (input.menuConfirm) {
+                        AudioSynth::Play(SoundID::UPGRADE_SELECT);
+                        player.SetFrame(static_cast<MechFrame>(hangarFrame));
+                        player.SetPrimaryWeapon(static_cast<WeaponType>(hangarPrim));
+                        player.SetOrdnanceWeapon(static_cast<WeaponType>(hangarOrd == 3 ? static_cast<int>(WeaponType::NUCLEAR_CLUSTER_TORPEDO) : (hangarOrd + 5)));
+                        state = GameState::TITLE_SCREEN;
+                    }
+                } else {
+                    // Engineering Shop tab
+                    if (input.menuUp) hangarUpgrade = (hangarUpgrade + 4) % 5;
+                    if (input.menuDown) hangarUpgrade = (hangarUpgrade + 1) % 5;
+
+                    if (input.menuConfirm) {
+                        bool success = SaveSystem::PurchaseUpgrade(hangarUpgrade);
+                        if (success) {
+                            AudioSynth::Play(SoundID::PURCHASE_UPGRADE);
+                            player.Reset(static_cast<MechFrame>(hangarFrame)); // Re-apply upgrade stats
+                        } else {
+                            AudioSynth::Play(SoundID::HEAT_OVERHEAT);
+                        }
+                    }
+
+                    if (IsKeyPressed(KEY_R)) {
+                        SaveSystem::ResetUpgrades();
+                        AudioSynth::Play(SoundID::HEAT_PURGE_SUCCESS);
+                        player.Reset(static_cast<MechFrame>(hangarFrame));
+                    }
+                }
+
+                if (input.menuBack) {
+                    state = GameState::TITLE_SCREEN;
                 }
                 break;
             }
@@ -219,27 +323,6 @@ int main(int argc, char** argv) {
                 projManager.Update(dt);
                 particles.Update(dt);
                 camera.Update(player.GetPosition(), input.mouseWorldPos, dt);
-                break;
-            }
-
-            case GameState::HANGAR_LOADOUT: {
-                if (input.menuUp) hangarFrame = (hangarFrame + 3) % 4;
-                if (input.menuDown) hangarFrame = (hangarFrame + 1) % 4;
-                if (input.menuLeft) hangarPrim = (hangarPrim + 3) % 4;
-                if (input.menuRight) hangarPrim = (hangarPrim + 1) % 4;
-
-                if (IsKeyPressed(KEY_Z)) hangarOrd = (hangarOrd + 2) % 3;
-                if (IsKeyPressed(KEY_X)) hangarOrd = (hangarOrd + 1) % 3;
-
-                if (input.menuBack) {
-                    state = GameState::TITLE_SCREEN;
-                } else if (input.menuConfirm) {
-                    AudioSynth::Play(SoundID::UPGRADE_SELECT);
-                    player.SetFrame(static_cast<MechFrame>(hangarFrame));
-                    player.SetPrimaryWeapon(static_cast<WeaponType>(hangarPrim));
-                    player.SetOrdnanceWeapon(static_cast<WeaponType>(hangarOrd + 4));
-                    state = GameState::TITLE_SCREEN;
-                }
                 break;
             }
 
@@ -378,6 +461,28 @@ int main(int argc, char** argv) {
             } else if (state == GameState::GAME_OVER) {
                 Menu::DrawGameOver(totalWavesCleared, player.GetNaniteCores());
             }
+        } else if (state == GameState::ENDLESS_SURVIVAL) {
+            camera.BeginMode();
+            starfield.Draw(camera.GetPosition());
+            endless.Draw();
+            projManager.Draw();
+            enemies.Draw();
+            boss.Draw();
+            drones.Draw();
+            player.Draw();
+            particles.Draw();
+            camera.EndMode();
+
+            // HUD & Endless Hazard Top Banner
+            HUD::Draw(player, boss, sector);
+
+            int bannerW = 600;
+            DrawRectangle(GetScreenWidth() / 2 - bannerW / 2, 12, bannerW, 36, {12, 18, 30, 230});
+            DrawRectangleLines(GetScreenWidth() / 2 - bannerW / 2, 12, bannerW, 36, {100, 200, 255, 220});
+            DrawText(endless.GetHazardName().c_str(), GetScreenWidth() / 2 - 270, 22, 14, {255, 220, 80, 255});
+
+            std::string waveStr = "ENDLESS WAVE: " + std::to_string(endless.GetCurrentWave());
+            DrawText(waveStr.c_str(), 40, 22, 18, {100, 255, 180, 255});
         } else if (state == GameState::FIRING_RANGE) {
             camera.BeginMode();
             starfield.Draw(camera.GetPosition());
@@ -402,7 +507,7 @@ int main(int argc, char** argv) {
         } else if (state == GameState::TITLE_SCREEN) {
             Menu::DrawTitle(titleSelection, animTime);
         } else if (state == GameState::HANGAR_LOADOUT) {
-            Menu::DrawHangar(player, hangarFrame, hangarPrim, hangarOrd);
+            Menu::DrawHangar(player, hangarTab, hangarFrame, hangarPrim, hangarOrd, hangarUpgrade);
         } else if (state == GameState::UPGRADE_DRAFT) {
             Menu::DrawUpgradeDraft(draftCards, draftSelection, player.GetNaniteCores());
         } else if (state == GameState::VICTORY_SCREEN) {
@@ -423,6 +528,7 @@ int main(int argc, char** argv) {
     // 5. Cleanup
     PostProcessing::Shutdown();
     MusicEngine::Shutdown();
+    Audio::VoiceSynthesizer::Shutdown();
     AudioSynth::Shutdown();
     CloseWindow();
     return 0;

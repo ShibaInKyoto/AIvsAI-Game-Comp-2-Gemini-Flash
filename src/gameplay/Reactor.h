@@ -42,10 +42,13 @@ public:
     [[nodiscard]] float GetEngineSpeedMult() const { return 0.75f + m_allocation.engines * 0.75f; }
     [[nodiscard]] float GetDashCooldownMult() const { return 1.3f - m_allocation.engines * 0.6f; }
 
+    void SetDissipationMultiplier(float mult) { m_dissipationMult = mult; }
+
 private:
     PowerProfile m_profile{PowerProfile::BALANCED};
     PowerAllocation m_allocation{};
 
+    float m_dissipationMult{1.0f};
     float m_heat{0.0f};
     float m_maxHeat{100.0f};
     bool m_isOverheated{false};

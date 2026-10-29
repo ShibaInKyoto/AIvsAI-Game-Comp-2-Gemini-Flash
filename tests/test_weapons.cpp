@@ -18,6 +18,14 @@ void RunWeaponTests() {
     assert(missiles.isHoming == true);
     assert(missiles.isExplosive == true);
 
+    auto disruptor = WeaponFactory::GetDefinition(WeaponType::NEUTRON_DISRUPTOR);
+    assert(disruptor.isDisruptor == true);
+    assert(disruptor.pierceCount >= 2);
+
+    auto torpedo = WeaponFactory::GetDefinition(WeaponType::NUCLEAR_CLUSTER_TORPEDO);
+    assert(torpedo.isCluster == true);
+    assert(torpedo.submunitionCount == 8);
+
     // Projectile Manager update
     ProjectileManager pm;
     Projectile p;

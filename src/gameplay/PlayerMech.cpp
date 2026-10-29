@@ -3,6 +3,7 @@
 #include "engine/ParticleSystem.h"
 #include "engine/AudioSynth.h"
 #include "core/Random.h"
+#include "core/SaveSystem.h"
 #include <cmath>
 #include <algorithm>
 
@@ -48,6 +49,13 @@ void PlayerMech::Reset(MechFrame frame) {
             m_collisionRadius = 16.0f;
             break;
     }
+
+    // Apply Hangar Engineering upgrades from persistent save profile
+    const auto& up = SaveSystem::GetProfile().upgrades;
+    m_maxHull += static_cast<float>(up.hullPlatingLevel * 15);
+    m_maxShield += static_cast<float>(up.shieldCapacitorLevel * 10);
+    m_dashCooldown = 2.0f * (1.0f - up.dashCoolingLevel * 0.08f);
+    m_reactor.SetDissipationMultiplier(1.0f + up.coolingTurbinesLevel * 0.10f);
 
     m_hull = m_maxHull;
     m_shield = m_maxShield;
@@ -209,6 +217,7 @@ void PlayerMech::FirePrimary(ProjectileManager& projManager, ParticleSystem& par
         p.radius = def.projectileRadius;
         p.color = def.projectileColor;
         p.pierceCount = def.pierceCount;
+        p.isDisruptor = def.isDisruptor;
         p.isEnemy = false;
         projManager.SpawnProjectile(p);
 
@@ -245,6 +254,8 @@ void PlayerMech::FireOrdnance(ProjectileManager& projManager, ParticleSystem& pa
         p.targetPos = Input::Get().mouseWorldPos;
         p.isExplosive = def.isExplosive;
         p.explosionRadius = def.explosionRadius;
+        p.isCluster = def.isCluster;
+        p.submunitionCount = def.submunitionCount;
         projManager.SpawnProjectile(p);
 
         particles.SpawnPlasma(muzzlePos, projDir * 40.0f, {255, 100, 80, 255}, 6.0f, 0.2f);

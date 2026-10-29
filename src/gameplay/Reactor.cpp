@@ -76,7 +76,7 @@ void Reactor::Update(float dt) {
     // Passive dissipation based on engine allocation
     float baseDissipation = 14.0f; // per second
     float engineBonus = m_allocation.engines * 22.0f;
-    float totalDissipation = baseDissipation + engineBonus;
+    float totalDissipation = (baseDissipation + engineBonus) * m_dissipationMult;
 
     m_heat = std::max(0.0f, m_heat - totalDissipation * dt);
 }

@@ -1,6 +1,7 @@
 #include "ui/Menu.h"
 #include "gameplay/PlayerMech.h"
 #include "gameplay/Weapons.h"
+#include "core/SaveSystem.h"
 #include <cmath>
 
 namespace Voidfall {
@@ -9,10 +10,8 @@ void Menu::DrawTitle(int selectedIndex, float animTime) {
     int screenW = GetScreenWidth();
     int screenH = GetScreenHeight();
 
-    // Background gradient effect
     DrawRectangleGradientV(0, 0, screenW, screenH, {8, 12, 22, 255}, {14, 20, 36, 255});
 
-    // Subtitle & Title
     float glow = (std::sin(animTime * 2.5f) + 1.0f) * 0.5f;
     Color titleGlow = {
         static_cast<unsigned char>(120 + 80 * glow),
@@ -21,69 +20,141 @@ void Menu::DrawTitle(int selectedIndex, float animTime) {
         255
     };
 
-    DrawText("AI vs AI GAME COMPETITION 2 • GEMINI FLASH", screenW / 2 - 210, screenH / 2 - 180, 16, {140, 160, 200, 200});
-    DrawText("VOIDFALL: PROTOCOL ZERO", screenW / 2 - 290, screenH / 2 - 140, 38, titleGlow);
-    DrawText("TACTICAL HIGH-VELOCITY MECH COMBAT & EXTRACTION", screenW / 2 - 250, screenH / 2 - 95, 15, {160, 220, 255, 220});
+    DrawText("AI vs AI GAME COMPETITION 2 • GEMINI FLASH", screenW / 2 - 210, screenH / 2 - 210, 16, {140, 160, 200, 200});
+    DrawText("VOIDFALL: PROTOCOL ZERO", screenW / 2 - 290, screenH / 2 - 175, 38, titleGlow);
+    DrawText("TACTICAL HIGH-VELOCITY KINETIC MECH COMBAT & EXTRACTION", screenW / 2 - 275, screenH / 2 - 130, 15, {160, 220, 255, 220});
 
-    // Menu options
     const char* options[] = {
         "1. LAUNCH EXPEDITION (CAMPAIGN)",
-        "2. TITAN COLOSSEUM (BOSS RUSH)",
-        "3. MECH HANGAR & WEAPONS",
-        "4. TACTICAL CODEX & MANUAL",
-        "5. EXIT TO DESKTOP"
+        "2. ENDLESS PROTOCOL (SURVIVAL HORDE)",
+        "3. TITAN COLOSSEUM (BOSS RUSH)",
+        "4. WEAPONS BENCHMARK (FIRING RANGE)",
+        "5. MECH HANGAR & ENGINEERING",
+        "6. TACTICAL CODEX & MANUAL",
+        "7. EXIT TO DESKTOP"
     };
 
-    for (int i = 0; i < 5; ++i) {
-        int y = screenH / 2 - 20 + i * 44;
+    for (int i = 0; i < 7; ++i) {
+        int y = screenH / 2 - 70 + i * 40;
         bool isSel = (i == selectedIndex);
 
         if (isSel) {
-            DrawRectangle(screenW / 2 - 180, y - 6, 360, 36, {40, 80, 140, 180});
-            DrawRectangleLines(screenW / 2 - 180, y - 6, 360, 36, {100, 200, 255, 255});
-            DrawText(">", screenW / 2 - 165, y + 2, 20, {255, 230, 80, 255});
-            DrawText(options[i], screenW / 2 - 140, y + 2, 18, {255, 255, 255, 255});
+            DrawRectangle(screenW / 2 - 200, y - 4, 400, 32, {40, 80, 140, 180});
+            DrawRectangleLines(screenW / 2 - 200, y - 4, 400, 32, {100, 200, 255, 255});
+            DrawText(">", screenW / 2 - 185, y + 2, 18, {255, 230, 80, 255});
+            DrawText(options[i], screenW / 2 - 160, y + 2, 17, {255, 255, 255, 255});
         } else {
-            DrawText(options[i], screenW / 2 - 140, y + 2, 18, {160, 175, 200, 200});
+            DrawText(options[i], screenW / 2 - 160, y + 2, 17, {160, 175, 200, 200});
         }
     }
 
-    DrawText("[W/S or UP/DOWN] Navigate • [ENTER/SPACE/LMB] Engage", screenW / 2 - 210, screenH - 45, 14, {120, 140, 170, 200});
+    DrawText("[W/S or UP/DOWN] Navigate • [ENTER/SPACE] Engage", screenW / 2 - 185, screenH - 40, 14, {120, 140, 170, 200});
 }
 
-void Menu::DrawHangar(const PlayerMech& player, int selectedFrame, int selectedPrim, int selectedOrd) {
+void Menu::DrawHangar(const PlayerMech& player, int hangarTab, int selectedFrame, int selectedPrim, int selectedOrd, int selectedUpgrade) {
     (void)player;
     int screenW = GetScreenWidth();
     int screenH = GetScreenHeight();
 
     DrawRectangle(0, 0, screenW, screenH, {10, 15, 25, 245});
-    DrawText("MECH HANGAR & TACTICAL OUTFITTER", 50, 40, 28, {100, 220, 255, 255});
+    DrawText("COMMAND HANGAR & ENGINEERING DOCK", 50, 35, 28, {100, 220, 255, 255});
 
-    // 1. Frame Selection
-    DrawText("CHASSIS FRAME:", 50, 100, 18, {220, 230, 250, 255});
-    const char* frames[] = {"STRIKER (Balanced & Swift)", "TITAN (Heavy Armor & Fortress)", "PHANTOM (Stealth & Crit)", "AEGIS (Reflective Shields)"};
-    for (int i = 0; i < 4; ++i) {
-        Color col = (i == selectedFrame) ? Color{255, 220, 80, 255} : Color{140, 160, 190, 200};
-        DrawText(frames[i], 70, 130 + i * 28, 15, col);
+    auto& prof = SaveSystem::GetProfile();
+    std::string naniteBankText = "BANKED NANITE CORES: " + std::to_string(prof.totalNanitesBanked);
+    DrawText(naniteBankText.c_str(), screenW - 380, 42, 18, {100, 255, 180, 255});
+
+    // Tab Headers
+    Color tab1Col = (hangarTab == 0) ? Color{255, 220, 80, 255} : Color{140, 160, 190, 200};
+    Color tab2Col = (hangarTab == 1) ? Color{255, 220, 80, 255} : Color{140, 160, 190, 200};
+    DrawText("[TAB 1: MECH OUTFITTER]", 50, 80, 18, tab1Col);
+    DrawText("[TAB 2: ENGINEERING SHOP]", 320, 80, 18, tab2Col);
+    DrawText("(Press [TAB] to Switch)", 590, 82, 14, {160, 180, 210, 180});
+
+    if (hangarTab == 0) {
+        // TAB 1: Outfitter
+        DrawText("CHASSIS FRAME [W/S]:", 50, 130, 18, {220, 230, 250, 255});
+        const char* frames[] = {
+            "STRIKER (Balanced kinetic platform, rapid cooling)",
+            "TITAN (Heavy armor plating, colossal forward shield)",
+            "PHANTOM (Ultra-light stealth frame, high crit multiplier)",
+            "AEGIS (Automated point defense, reflective shields)"
+        };
+        for (int i = 0; i < 4; ++i) {
+            Color col = (i == selectedFrame) ? Color{255, 220, 80, 255} : Color{140, 160, 190, 200};
+            DrawText(frames[i], 70, 160 + i * 28, 15, col);
+        }
+
+        DrawText("PRIMARY WEAPON [A/D]:", 50, 290, 18, {220, 230, 250, 255});
+        const char* prims[] = {
+            "Kinetic Rail-Vulcan (High fire rate)",
+            "Particle Beam Lance (Piercing plasma)",
+            "Quantum Flak Cannon (Close-range spread)",
+            "Arc Tempest Emitter (Chain electricity)",
+            "Neutron Disruptor (Anti-shield EMP beam)"
+        };
+        for (int i = 0; i < 5; ++i) {
+            Color col = (i == selectedPrim) ? Color{255, 220, 80, 255} : Color{140, 160, 190, 200};
+            DrawText(prims[i], 70, 320 + i * 26, 15, col);
+        }
+
+        DrawText("ORDNANCE WEAPON [Z/X]:", 50, 470, 18, {220, 230, 250, 255});
+        const char* ords[] = {
+            "Hydra Swarm Missiles (Homing salvo)",
+            "Singularity Projector (Gravity vortex)",
+            "Cryo-Stasis Rail Driver (Extreme kinetic sniper)",
+            "Nuclear Cluster Torpedo (Detonates into 8 bomblets)"
+        };
+        for (int i = 0; i < 4; ++i) {
+            Color col = (i == selectedOrd) ? Color{255, 220, 80, 255} : Color{140, 160, 190, 200};
+            DrawText(ords[i], 70, 500 + i * 26, 15, col);
+        }
+    } else {
+        // TAB 2: Hangar Engineering Shop
+        DrawText("PERMANENT CHASSIS ENGINEERING PERKS [UP/DOWN & ENTER]:", 50, 130, 18, {220, 230, 250, 255});
+
+        struct UpgradeInfo {
+            const char* name;
+            int level;
+            const char* desc;
+        };
+
+        UpgradeInfo upList[5] = {
+            {"HULL COMPOSITE REINFORCEMENT", prof.upgrades.hullPlatingLevel, "+15 Max Hull Integrity per level"},
+            {"COOLING TURBINES & HEAT SINKS", prof.upgrades.coolingTurbinesLevel, "+10% Faster Core Heat Dissipation"},
+            {"SHIELD OVERCHARGE CAPACITORS", prof.upgrades.shieldCapacitorLevel, "+10 Max Shield Capacity per level"},
+            {"SUB-MOLECULAR NANITE HARVESTERS", prof.upgrades.scavengerNanitesLevel, "+15% Extra Nanite drops per salvage"},
+            {"PHASE DASH CAPACITOR COILS", prof.upgrades.dashCoolingLevel, "+8% Faster Dash Thruster Cooldown"}
+        };
+
+        for (int i = 0; i < 5; ++i) {
+            int y = 175 + i * 80;
+            bool isSel = (i == selectedUpgrade);
+
+            Color borderCol = isSel ? Color{255, 230, 80, 255} : Color{60, 90, 140, 160};
+            DrawRectangle(50, y, screenW - 100, 70, {20, 30, 50, 180});
+            DrawRectangleLines(50, y, screenW - 100, 70, borderCol);
+
+            DrawText(upList[i].name, 70, y + 12, 16, isSel ? Color{255, 255, 255, 255} : Color{200, 215, 235, 220});
+            DrawText(upList[i].desc, 70, y + 36, 13, {150, 175, 200, 200});
+
+            // Level pips [ ||||| ..... ]
+            std::string pips = "LVL " + std::to_string(upList[i].level) + "/5  [";
+            for (int p = 0; p < 5; ++p) {
+                pips += (p < upList[i].level) ? "■ " : "□ ";
+            }
+            pips += "]";
+            DrawText(pips.c_str(), screenW - 420, y + 22, 16, {100, 240, 255, 255});
+
+            int cost = SaveSystem::GetUpgradeCost(i);
+            std::string costText = (cost < 0) ? "MAX LEVEL" : ("COST: " + std::to_string(cost) + " CORES");
+            Color costCol = (cost < 0) ? Color{120, 255, 140, 255} : (prof.totalNanitesBanked >= cost ? Color{255, 220, 80, 255} : Color{255, 100, 100, 255});
+            DrawText(costText.c_str(), screenW - 220, y + 22, 15, costCol);
+        }
+
+        DrawText("Press [ENTER/SPACE] to Purchase Upgrade • [R] Respec & Refund All Cores", 50, screenH - 85, 15, {140, 220, 255, 255});
     }
 
-    // 2. Primary Weapons
-    DrawText("LEFT ARM (PRIMARY):", 50, 260, 18, {220, 230, 250, 255});
-    const char* prims[] = {"Kinetic Rail-Vulcan", "Particle Beam Lance", "Quantum Flak Shotgun", "Arc Tempest Emitter"};
-    for (int i = 0; i < 4; ++i) {
-        Color col = (i == selectedPrim) ? Color{255, 220, 80, 255} : Color{140, 160, 190, 200};
-        DrawText(prims[i], 70, 290 + i * 28, 15, col);
-    }
-
-    // 3. Ordnance Weapons
-    DrawText("RIGHT ARM (ORDNANCE):", 50, 420, 18, {220, 230, 250, 255});
-    const char* ords[] = {"Hydra Swarm Missiles", "Singularity Projector", "Cryo-Stasis Rail Driver"};
-    for (int i = 0; i < 3; ++i) {
-        Color col = (i == selectedOrd) ? Color{255, 220, 80, 255} : Color{140, 160, 190, 200};
-        DrawText(ords[i], 70, 450 + i * 28, 15, col);
-    }
-
-    DrawText("Press [SPACE/ENTER] to Deploy Mech • [ESC] Return to Title", 50, screenH - 50, 16, {120, 220, 255, 255});
+    DrawText("Press [SPACE/ENTER] Confirm Loadout • [ESC] Return to Title", 50, screenH - 45, 16, {120, 220, 255, 255});
 }
 
 void Menu::DrawUpgradeDraft(const std::vector<UpgradeCard>& cards, int selectedIdx, int naniteCores) {
@@ -148,6 +219,32 @@ void Menu::DrawGameOver(int wavesCleared, int naniteCores) {
     DrawText(("NANITE CORES RETRIEVED: " + std::to_string(naniteCores)).c_str(), screenW / 2 - 120, screenH / 2 + 45, 18, {100, 240, 255, 255});
 
     DrawText("Press [SPACE/ENTER] to Rebuild Mech • [ESC] Title", screenW / 2 - 190, screenH / 2 + 105, 16, {200, 220, 255, 220});
+}
+
+void Menu::DrawEndlessSummary(int wavesSurvived, float survivalTime, int nanitesEarned, bool extracted) {
+    int screenW = GetScreenWidth();
+    int screenH = GetScreenHeight();
+
+    Color bg = extracted ? Color{8, 24, 20, 240} : Color{24, 8, 12, 240};
+    DrawRectangle(0, 0, screenW, screenH, bg);
+
+    if (extracted) {
+        DrawText("SECTOR EXTRACTION CONFIRMED", screenW / 2 - 220, screenH / 2 - 110, 30, {100, 255, 180, 255});
+        DrawText("TACTICAL EVACUATION COMPLETED • BONUS NANITES GRANTED", screenW / 2 - 240, screenH / 2 - 70, 16, {160, 230, 200, 220});
+    } else {
+        DrawText("VOID DECAY TERMINATION", screenW / 2 - 190, screenH / 2 - 110, 30, {255, 80, 80, 255});
+        DrawText("ENDLESS HORDE OVERWHELMED CORE SYSTEMS", screenW / 2 - 180, screenH / 2 - 70, 16, {255, 140, 140, 200});
+    }
+
+    auto& prof = SaveSystem::GetProfile();
+
+    DrawText(("WAVES SURVIVED: " + std::to_string(wavesSurvived)).c_str(), screenW / 2 - 120, screenH / 2 - 15, 18, {255, 230, 80, 255});
+    DrawText(("SURVIVAL DURATION: " + std::to_string(static_cast<int>(survivalTime)) + " SECONDS").c_str(), screenW / 2 - 140, screenH / 2 + 15, 18, {200, 220, 255, 255});
+    DrawText(("NANITE CORES SECURED: " + std::to_string(nanitesEarned)).c_str(), screenW / 2 - 130, screenH / 2 + 45, 18, {100, 255, 180, 255});
+
+    DrawText(("ALL-TIME RECORD: WAVE " + std::to_string(prof.endlessStats.maxWave) + " • " + std::to_string(static_cast<int>(prof.endlessStats.maxTimeSurvived)) + "s").c_str(), screenW / 2 - 160, screenH / 2 + 85, 15, {140, 180, 220, 200});
+
+    DrawText("Press [SPACE/ENTER] Return to Hangar • [ESC] Title", screenW / 2 - 200, screenH / 2 + 135, 16, {200, 230, 255, 220});
 }
 
 void Menu::DrawVictory(int totalCores, float runTimeSeconds) {

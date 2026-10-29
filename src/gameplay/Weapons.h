@@ -21,6 +21,9 @@ struct Projectile {
     float homingStrength{0.0f};
     bool isExplosive{false};
     float explosionRadius{0.0f};
+    bool isCluster{false};
+    int submunitionCount{0};
+    bool isDisruptor{false};
 };
 
 struct WeaponDefinition {
@@ -39,6 +42,9 @@ struct WeaponDefinition {
     bool isHoming{false};
     bool isExplosive{false};
     float explosionRadius{0.0f};
+    bool isCluster{false};
+    int submunitionCount{0};
+    bool isDisruptor{false};
 };
 
 class WeaponFactory {

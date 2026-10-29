@@ -77,6 +77,20 @@ WeaponDefinition WeaponFactory::GetDefinition(WeaponType type) {
             def.explosionRadius = 45.0f;
             break;
 
+        case WeaponType::NEUTRON_DISRUPTOR:
+            def.name = "Neutron Disruptor";
+            def.description = "Coherent high-frequency beam that pierces shields and destabilizes cores.";
+            def.baseDamage = 28.0f;
+            def.fireRate = 0.12f;
+            def.heatCost = 5.5f;
+            def.projectileSpeed = 1450.0f;
+            def.projectileRadius = 4.0f;
+            def.projectileColor = {80, 255, 180, 255};
+            def.projectilesPerShot = 1;
+            def.pierceCount = 2;
+            def.isDisruptor = true;
+            break;
+
         case WeaponType::SINGULARITY_VORTEX:
             def.name = "Singularity Projector";
             def.description = "Compresses spacetime into an imploding gravity well.";
@@ -103,6 +117,22 @@ WeaponDefinition WeaponFactory::GetDefinition(WeaponType type) {
             def.projectilesPerShot = 1;
             def.pierceCount = 3;
             break;
+
+        case WeaponType::NUCLEAR_CLUSTER_TORPEDO:
+            def.name = "Nuclear Cluster Torpedo";
+            def.description = "Colossal fusion warhead that shatters into 8 radial submunitions.";
+            def.baseDamage = 180.0f;
+            def.fireRate = 2.4f;
+            def.heatCost = 38.0f;
+            def.projectileSpeed = 320.0f;
+            def.projectileRadius = 10.0f;
+            def.projectileColor = {255, 90, 30, 255};
+            def.projectilesPerShot = 1;
+            def.isExplosive = true;
+            def.explosionRadius = 110.0f;
+            def.isCluster = true;
+            def.submunitionCount = 8;
+            break;
     }
 
     return def;
@@ -121,10 +151,32 @@ void ProjectileManager::SpawnProjectile(const Projectile& p) {
 }
 
 void ProjectileManager::Update(float dt) {
+    std::vector<Projectile> spawnedClusters;
+
     for (size_t i = 0; i < m_projectiles.size(); ) {
         auto& p = m_projectiles[i];
         p.life -= dt;
         if (p.life <= 0.0f) {
+            // Spawn cluster submunitions if cluster torpedo expired
+            if (p.isCluster && p.submunitionCount > 0) {
+                float angleStep = 6.283185f / static_cast<float>(p.submunitionCount);
+                for (int s = 0; s < p.submunitionCount; ++s) {
+                    float a = s * angleStep;
+                    Projectile sub;
+                    sub.pos = p.pos;
+                    sub.vel = Vec2::FromAngle(a, 480.0f);
+                    sub.damage = p.damage * 0.35f;
+                    sub.radius = 4.5f;
+                    sub.life = 0.8f;
+                    sub.maxLife = 0.8f;
+                    sub.color = {255, 180, 50, 255};
+                    sub.isEnemy = p.isEnemy;
+                    sub.isExplosive = true;
+                    sub.explosionRadius = 40.0f;
+                    spawnedClusters.push_back(sub);
+                }
+            }
+
             m_projectiles[i] = m_projectiles.back();
             m_projectiles.pop_back();
             continue;
@@ -144,6 +196,10 @@ void ProjectileManager::Update(float dt) {
 
         p.pos += p.vel * dt;
         ++i;
+    }
+
+    for (const auto& sub : spawnedClusters) {
+        m_projectiles.push_back(sub);
     }
 }
 
