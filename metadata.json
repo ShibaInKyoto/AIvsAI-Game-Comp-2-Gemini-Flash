@@ -1,0 +1,5 @@
+{
+  "name": "AIvsAI-Game-Comp-2-Gemini-Flash",
+  "description": "Native Windows Desktop Game project for AI vs AI Game Competition 2, featuring a custom C++20 / Raylib engine, automated CI release pipeline, and dev companion dashboard.",
+  "majorCapabilities": []
+}

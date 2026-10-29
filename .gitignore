@@ -1,0 +1,17 @@
+# Build directories
+build/
+bin/
+dist/
+node_modules/
+
+# Autotest temporary artifacts
+smoke/
+*.png
+mesa.7z
+mesa/
+
+# OS / Editor metadata
+.DS_Store
+Thumbs.db
+.vscode/
+.idea/
