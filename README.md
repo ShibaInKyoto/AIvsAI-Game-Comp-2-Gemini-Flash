@@ -97,10 +97,19 @@ Unlike generic bubble shields, your energy barrier projects a directional arc fa
 
 - **Language**: Modern C++20 (`std::clamp`, `constexpr`, structured bindings).
 - **Engine**: Raylib 5.5 (Hardware-accelerated OpenGL 3.3).
-- **Procedural Audio Synthesizer**: 100% math-synthesized waveforms generated into memory buffers at boot (zero audio files needed).
+- **Procedural Audio Synthesizer**: 100% math-synthesized waveforms generated into memory buffers at boot (zero external audio files needed).
 - **Deterministic PRNG**: xoshiro256** implementation for procedural generation.
 - **Memory & Cache Efficiency**: Contiguous linear pools for particles and projectiles. Zero heap allocations in the 60 FPS update loop.
-- **CI / CD Pipeline**: Automated GitHub Actions workflow on `windows-latest` (MSVC x64) and Linux (GCC), running automated unit tests and headless smoke tests.
+- **Branching Narrative & Dialogue Engine**: Interactive communication link with character portraits, animated typewriter text, mood tags, and moral alignment tracking (Loyalist vs Renegade).
+- **Campaign Mission Progression**: 5 multi-stage tactical operations with primary and bonus objectives, star ratings, and persistent mission debriefings.
+- **Flight Recorder & Black Box Replay**: High-frequency telemetry recorder with interactive timeline scrubber, event tracking, accuracy metrics, and S+/S/A/B/C/D combat evaluations.
+- **Environmental Hazards & Dynamics**: Procedural asteroid field collisions with dynamic polygonal fragmentation, gravitational singularities with inverse-square accretion pull, ion nebulae, and solar flare storms.
+- **Tactical Flocking & Formation AI**: Reynolds boid steering (Separation, Alignment, Cohesion, Formation Seeking, Obstacle Avoidance) with Wedge, Pincer, and Ring squad formations and commander succession.
+- **Multi-Spectrum Shader Pipeline**: Hardware and software post-processing filters including Thermal IR palette mapping, Mil-NVG phosphor green, CRT scanline overlay, and chromatic aberration shockwave pulses.
+- **Custom 3D Software Rasterizer & Skeletal IK**: Subpixel barycentric rasterizer with 1/w perspective-correct interpolation, Blinn-Phong shading, and two-bone analytic Inverse Kinematics leg solvers.
+- **Mission Scripting Bytecode VM**: Custom compiler and stack-based virtual machine with branching, arithmetic, and coroutines for dynamic event encounters.
+- **Dynamic Commodity Trade Market & 30-Node Galaxy**: Multi-system galaxy with Dijkstra jump gate routing, 8 fluctuating commodities, supply/demand elasticity, and market crises.
+- **CI / CD Pipeline**: Automated GitHub Actions workflow on `windows-latest` (MSVC x64) and Linux (GCC), running 15 automated unit test suites and headless smoke tests.
 
 ---
 

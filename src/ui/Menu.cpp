@@ -288,4 +288,133 @@ void Menu::DrawCodex() {
     DrawText("Press [ESC] to Return to Title", 50, screenH - 50, 16, {100, 220, 255, 255});
 }
 
+void Menu::DrawMissionDebriefing(const PostCombatReport& report) {
+    int screenW = GetScreenWidth();
+    int screenH = GetScreenHeight();
+
+    DrawRectangle(0, 0, screenW, screenH, {8, 14, 24, 250});
+
+    // Header Panel
+    DrawRectangle(40, 30, screenW - 80, 60, {15, 24, 40, 240});
+    DrawRectangleLines(40, 30, screenW - 80, 60, {50, 90, 150, 255});
+    DrawText("POST-MISSION TACTICAL DEBRIEFING & TELEMETRY LOG", 60, 48, 22, {100, 220, 255, 255});
+
+    // Combat Performance Grade Card
+    int cardX = 60;
+    int cardY = 120;
+    int cardW = 320;
+    int cardH = 340;
+    DrawRectangle(cardX, cardY, cardW, cardH, {12, 18, 30, 240});
+    DrawRectangleLines(cardX, cardY, cardW, cardH, {40, 70, 110, 200});
+
+    DrawText("PILOT COMBAT RATING", cardX + 20, cardY + 20, 16, {160, 180, 210, 200});
+
+    // Giant Rank Letter
+    Color rankCol = {255, 220, 80, 255};
+    if (report.rankGrade == "S+" || report.rankGrade == "S") rankCol = {100, 255, 180, 255};
+    else if (report.rankGrade == "A") rankCol = {80, 200, 255, 255};
+    else if (report.rankGrade == "D") rankCol = {255, 80, 80, 255};
+
+    DrawText(report.rankGrade.c_str(), cardX + 110, cardY + 70, 90, rankCol);
+    DrawText("COMBAT EVALUATION: COMPLETE", cardX + 30, cardY + 200, 14, {140, 170, 200, 200});
+
+    std::string naniteAward = "+ " + std::to_string(report.bonusNanitesAwarded) + " NANITE CORES";
+    DrawText(naniteAward.c_str(), cardX + 30, cardY + 240, 18, {100, 255, 180, 255});
+
+    // Detailed Telemetry Breakdown Card
+    int statX = cardX + cardW + 30;
+    int statY = cardY;
+    int statW = screenW - statX - 60;
+    int statH = cardH;
+    DrawRectangle(statX, statY, statW, statH, {12, 18, 30, 240});
+    DrawRectangleLines(statX, statY, statW, statH, {40, 70, 110, 200});
+
+    DrawText("TELEMETRY SENSOR ANALYTICS", statX + 20, statY + 20, 16, {100, 220, 255, 255});
+
+    int rowY = statY + 60;
+    int stepY = 32;
+
+    auto DrawStatRow = [&](const char* label, const std::string& val, Color valCol) {
+        DrawText(label, statX + 25, rowY, 15, {170, 190, 220, 220});
+        DrawText(val.c_str(), statX + statW - MeasureText(val.c_str(), 15) - 30, rowY, 15, valCol);
+        rowY += stepY;
+    };
+
+    DrawStatRow("Total Combat Sortie Duration:", std::to_string(static_cast<int>(report.totalFlightTime)) + " Seconds", {255, 255, 255, 255});
+    DrawStatRow("Hostile Units Neutralized:", std::to_string(report.totalEnemiesEliminated), {255, 220, 80, 255});
+    DrawStatRow("Total Kinetic/Beam Damage Dealt:", std::to_string(static_cast<int>(report.totalDamageDealt)), {100, 255, 180, 255});
+    DrawStatRow("Total Hull Damage Sustained:", std::to_string(static_cast<int>(report.totalDamageReceived)), {255, 120, 120, 255});
+    DrawStatRow("Targeting Accuracy:", std::to_string(static_cast<int>(report.accuracyPercent)) + "% (" + std::to_string(report.shotsHit) + "/" + std::to_string(report.shotsFired) + ")", {100, 220, 255, 255});
+    DrawStatRow("Perfect Shield Parries / Evades:", std::to_string(report.perfectDodges), {255, 220, 100, 255});
+    DrawStatRow("Reactor Peak Core Thermal Level:", std::to_string(static_cast<int>(report.peakHeatPercent)) + "%", {255, 150, 80, 255});
+
+    // Bottom Navigation Bar
+    DrawRectangle(40, screenH - 70, screenW - 80, 45, {15, 24, 40, 240});
+    DrawRectangleLines(40, screenH - 70, screenW - 80, 45, {50, 90, 150, 255});
+    DrawText("[ENTER/SPACE] Continue to Hangar  •  [R] Replay Sortie Telemetry Blackbox", 60, screenH - 56, 15, {220, 235, 255, 255});
+}
+
+void Menu::DrawFlightReplay(const FlightRecorder& recorder, float animTime) {
+    int screenW = GetScreenWidth();
+    int screenH = GetScreenHeight();
+
+    DrawRectangle(0, 0, screenW, screenH, {6, 10, 18, 250});
+
+    // Replay Cockpit Scrubbing Overlay
+    DrawText("FLIGHT RECORDER // BLACK BOX REPLAY MODE", 50, 30, 20, {255, 120, 80, 255});
+
+    float dur = recorder.GetTotalDuration();
+    float cursor = recorder.GetPlaybackCursor();
+    const auto* sample = recorder.GetCurrentPlaybackSample();
+
+    // Timeline Scrubber Bar
+    int barX = 50;
+    int barY = screenH - 80;
+    int barW = screenW - 100;
+    int barH = 16;
+    DrawRectangle(barX, barY, barW, barH, {20, 30, 50, 255});
+    DrawRectangleLines(barX, barY, barW, barH, {60, 100, 160, 255});
+
+    float progress = (dur > 0.001f) ? (cursor / dur) : 0.0f;
+    DrawRectangle(barX, barY, static_cast<int>(barW * progress), barH, {255, 140, 50, 255});
+
+    // Cursor indicator
+    int curX = barX + static_cast<int>(barW * progress);
+    DrawCircle(curX, barY + barH / 2, 8.0f, {255, 255, 255, 255});
+
+    std::string timeStr = "TIMECODE: " + std::to_string(cursor) + "s / " + std::to_string(dur) + "s";
+    DrawText(timeStr.c_str(), 50, barY - 26, 15, {200, 220, 255, 255});
+
+    const char* status = recorder.IsPlaybackPaused() ? "[PAUSED]" : "[PLAYING >]";
+    DrawText(status, screenW - 180, barY - 26, 15, recorder.IsPlaybackPaused() ? Color{255, 200, 60, 255} : Color{100, 255, 140, 255});
+
+    // Live Telemetry Tele-display
+    if (sample) {
+        int telX = 50;
+        int telY = 70;
+        DrawText(("MECH POS: (" + std::to_string(static_cast<int>(sample->playerPos.x)) + ", " + std::to_string(static_cast<int>(sample->playerPos.y)) + ")").c_str(), telX, telY, 14, {180, 200, 230, 220});
+        DrawText(("SPEED: " + std::to_string(static_cast<int>(sample->playerVel.Length())) + " u/s").c_str(), telX, telY + 22, 14, {180, 200, 230, 220});
+        DrawText(("REACTOR HEAT: " + std::to_string(static_cast<int>(sample->playerHeat)) + "%").c_str(), telX, telY + 44, 14, {255, 140, 80, 255});
+        DrawText(("SHIELD INTEGRITY: " + std::to_string(static_cast<int>(sample->playerShields)) + "%").c_str(), telX, telY + 66, 14, {100, 220, 255, 255});
+        DrawText(("HULL STRUCTURE: " + std::to_string(static_cast<int>(sample->playerHealth)) + "%").c_str(), telX, telY + 88, 14, {100, 255, 180, 255});
+        DrawText(("ACTIVE THREATS: " + std::to_string(sample->activeEnemyCount)).c_str(), telX, telY + 110, 14, {255, 100, 100, 255});
+
+        // Mini radar representation of flight sample
+        int radarX = screenW / 2;
+        int radarY = screenH / 2 - 20;
+        DrawCircleLines(radarX, radarY, 150.0f, {40, 80, 130, 180});
+        DrawCircleLines(radarX, radarY, 80.0f, {40, 80, 130, 120});
+        DrawLine(radarX - 160, radarY, radarX + 160, radarY, {40, 80, 130, 120});
+        DrawLine(radarX, radarY - 160, radarX, radarY + 160, {40, 80, 130, 120});
+
+        // Mech position dot
+        DrawCircle(radarX, radarY, 6.0f, {100, 220, 255, 255});
+        // Aim direction heading
+        float rad = sample->playerFacingDeg * (3.14159f / 180.0f);
+        DrawLine(radarX, radarY, radarX + static_cast<int>(std::cos(rad) * 25.0f), radarY + static_cast<int>(std::sin(rad) * 25.0f), {255, 220, 80, 255});
+    }
+
+    DrawText("[SPACE] Play/Pause • [LEFT/RIGHT] Scrub 2s • [ESC] Return", 50, screenH - 35, 14, {140, 160, 200, 200});
+}
+
 } // namespace Voidfall

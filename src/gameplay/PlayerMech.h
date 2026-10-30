@@ -22,7 +22,10 @@ public:
     void Heal(float amount);
 
     [[nodiscard]] Vec2 GetPosition() const { return m_pos; }
+    void SetPosition(const Vec2& pos) { m_pos = pos; }
     [[nodiscard]] Vec2 GetVelocity() const { return m_vel; }
+    void SetVelocity(const Vec2& vel) { m_vel = vel; }
+    [[nodiscard]] float GetFacingAngle() const { return m_facingAngle; }
     [[nodiscard]] float GetRadius() const { return m_collisionRadius; }
     [[nodiscard]] float GetHull() const { return m_hull; }
     [[nodiscard]] float GetMaxHull() const { return m_maxHull; }

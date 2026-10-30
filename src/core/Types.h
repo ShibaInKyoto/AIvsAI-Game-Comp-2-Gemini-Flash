@@ -99,7 +99,9 @@ enum class GameState {
     PAUSED,
     GAME_OVER,
     VICTORY_SCREEN,
-    CODEX
+    CODEX,
+    MISSION_DEBRIEFING,
+    FLIGHT_REPLAY
 };
 
 enum class SectorType {

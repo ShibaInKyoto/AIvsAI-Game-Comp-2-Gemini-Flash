@@ -2,7 +2,7 @@ import React, { useState } from 'react';
 import { Shield, Zap, Flame, Crosshair, Terminal, Cpu, Award, Download, Gamepad2, Layers, Map, Compass, Target, Trophy, Radio, Activity, Wrench } from 'lucide-react';
 
 export default function App() {
-  const [activeTab, setActiveTab] = useState<'overview' | 'endless' | 'hangar' | 'weapons' | 'reactor' | 'ci'>('overview');
+  const [activeTab, setActiveTab] = useState<'overview' | 'campaign' | 'telemetry' | 'endless' | 'hangar' | 'weapons' | 'reactor' | 'ci'>('overview');
   const [profile, setProfile] = useState<'BALANCED' | 'ASSAULT' | 'BULWARK' | 'INTERCEPTOR'>('BALANCED');
 
   const allocations = {
@@ -48,7 +48,7 @@ export default function App() {
           </div>
 
           <div style={{ display: 'flex', gap: '0.4rem', flexWrap: 'wrap' }}>
-            {(['overview', 'endless', 'hangar', 'weapons', 'reactor', 'ci'] as const).map((tab) => (
+            {(['overview', 'campaign', 'telemetry', 'endless', 'hangar', 'weapons', 'reactor', 'ci'] as const).map((tab) => (
               <button
                 key={tab}
                 onClick={() => setActiveTab(tab)}
@@ -146,6 +146,132 @@ export default function App() {
                 <p style={{ margin: 0, color: '#94a3b8', fontSize: '0.9rem', lineHeight: 1.5 }}>
                   Battle Goliath-IV Dread Fortress, Aethel-Core Orbital Carrier, and Protocol Zero Apex Titan with destroyable subsystems and bullet-hell sweeps.
                 </p>
+              </div>
+            </div>
+          </div>
+        )}
+
+        {activeTab === 'campaign' && (
+          <div style={{ display: 'flex', flexDirection: 'column', gap: '1.5rem' }}>
+            <div style={{ background: '#0f172a', border: '1px solid #1e293b', borderRadius: '12px', padding: '2rem' }}>
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '1rem', marginBottom: '1.5rem' }}>
+                <div>
+                  <h2 style={{ fontSize: '1.6rem', fontWeight: 800, margin: '0 0 0.5rem', color: '#ffffff' }}>Campaign Operations & Command Dossier</h2>
+                  <p style={{ color: '#94a3b8', margin: 0 }}>5 multi-stage tactical operations with branching dialogue choices and moral alignment impact.</p>
+                </div>
+                <div style={{ background: '#1e293b', padding: '0.6rem 1.2rem', borderRadius: '8px', border: '1px solid #334155' }}>
+                  <span style={{ fontSize: '0.8rem', color: '#94a3b8', textTransform: 'uppercase' }}>Current Alignment: </span>
+                  <strong style={{ color: '#38bdf8' }}>Directorate Vanguard [Loyalist]</strong>
+                </div>
+              </div>
+
+              {/* 5 Missions list */}
+              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(320px, 1fr))', gap: '1rem', marginBottom: '2rem' }}>
+                {[
+                  { id: 1, code: 'OP: IRON WAKE', title: 'The Iron Wake', host: 'Aegis Directorate', target: 'Obsidian Combine', diff: '★☆☆☆☆', reward: '750 Nanites', status: 'UNLOCKED / ACTIVE' },
+                  { id: 2, code: 'OP: PROMETHEUS DRIFT', title: 'Prometheus Drift', host: 'Civilian Traders', target: 'Obsidian Combine', diff: '★★☆☆☆', reward: '1,200 Nanites', status: 'REQUIRES OP 1' },
+                  { id: 3, code: 'OP: QUANTUM BREACH', title: 'Aegis Gate Anomaly', host: 'Aegis Directorate', target: 'Null-Sec Syndicate', diff: '★★★☆☆', reward: '1,800 Nanites', status: 'LOCKED' },
+                  { id: 4, code: 'OP: OBSIDIAN VEIL', title: 'Obsidian Core Incursion', host: 'Aegis Directorate', target: 'Obsidian Combine', diff: '★★★★☆', reward: '2,500 Nanites', status: 'LOCKED' },
+                  { id: 5, code: 'OP: PROTOCOL ZERO', title: 'Protocol Zero: Final Stand', host: 'Children of Iron', target: 'Rogue Sovereign Core', diff: '★★★★★', reward: '5,000 Nanites', status: 'APEX BOSS' },
+                ].map((m) => (
+                  <div key={m.id} style={{ background: '#1e293b', border: '1px solid #334155', borderRadius: '8px', padding: '1.25rem' }}>
+                    <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '0.5rem' }}>
+                      <span style={{ color: '#38bdf8', fontSize: '0.75rem', fontWeight: 700, letterSpacing: '0.05em' }}>{m.code}</span>
+                      <span style={{ color: '#fbbf24', fontSize: '0.85rem' }}>{m.diff}</span>
+                    </div>
+                    <h3 style={{ fontSize: '1.15rem', margin: '0 0 0.5rem', color: '#f8fafc' }}>{m.title}</h3>
+                    <div style={{ fontSize: '0.8rem', color: '#94a3b8', display: 'flex', flexDirection: 'column', gap: '0.25rem', marginBottom: '0.75rem' }}>
+                      <div>Client: <strong style={{ color: '#cbd5e1' }}>{m.host}</strong></div>
+                      <div>Target: <strong style={{ color: '#f87171' }}>{m.target}</strong></div>
+                      <div>Bounty: <strong style={{ color: '#4ade80' }}>{m.reward}</strong></div>
+                    </div>
+                    <div style={{ fontSize: '0.75rem', padding: '0.25rem 0.5rem', borderRadius: '4px', background: m.id === 1 ? 'rgba(56, 189, 248, 0.2)' : 'rgba(100, 116, 139, 0.2)', color: m.id === 1 ? '#38bdf8' : '#94a3b8', display: 'inline-block', fontWeight: 600 }}>
+                      {m.status}
+                    </div>
+                  </div>
+                ))}
+              </div>
+
+              {/* Character Transceiver Dossier */}
+              <h3 style={{ fontSize: '1.25rem', color: '#ffffff', margin: '0 0 1rem' }}>Sector Faction Transceivers</h3>
+              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(240px, 1fr))', gap: '1rem' }}>
+                {[
+                  { name: 'Cmdr. Samantha Vance', org: 'Aegis Directorate', mood: 'Priority Comm', quote: '"The Combine has initiated a sector-wide purge protocol. Hold the relay line!"', color: '#38bdf8' },
+                  { name: 'Arch-Inquisitor Malakor', org: 'Obsidian Combine', mood: 'Hostile Intent', quote: '"Defiance is an inefficient evolutionary strategy. Lay down your arms or be recycled."', color: '#ef4444' },
+                  { name: 'Kaelen "Rook" Vex', org: 'Null-Sec Syndicate', mood: 'Mercenary Broker', quote: '"If the Directorate gets stingy, Null-Sec pays triple for salvaged quantum cores."', color: '#f59e0b' },
+                  { name: 'Sister Mara', org: 'Children of Iron', mood: 'Cryptic Chant', quote: '"The machine spirit does not weep for flesh. Awaken the sleeping monolith."', color: '#a855f7' },
+                ].map((c, i) => (
+                  <div key={i} style={{ background: '#1e293b', borderLeft: `4px solid ${c.color}`, borderRadius: '6px', padding: '1rem' }}>
+                    <div style={{ fontSize: '0.75rem', color: c.color, fontWeight: 700, textTransform: 'uppercase' }}>{c.org}</div>
+                    <div style={{ fontSize: '1rem', fontWeight: 700, color: '#f8fafc', margin: '0.25rem 0' }}>{c.name}</div>
+                    <div style={{ fontSize: '0.8rem', color: '#94a3b8', fontStyle: 'italic', lineHeight: 1.4 }}>{c.quote}</div>
+                  </div>
+                ))}
+              </div>
+            </div>
+          </div>
+        )}
+
+        {activeTab === 'telemetry' && (
+          <div style={{ display: 'flex', flexDirection: 'column', gap: '1.5rem' }}>
+            <div style={{ background: '#0f172a', border: '1px solid #1e293b', borderRadius: '12px', padding: '2rem' }}>
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '1rem', marginBottom: '1.5rem' }}>
+                <div>
+                  <h2 style={{ fontSize: '1.6rem', fontWeight: 800, margin: '0 0 0.5rem', color: '#ffffff' }}>Black Box Flight Recorder & Telemetry Lab</h2>
+                  <p style={{ color: '#94a3b8', margin: 0 }}>High-frequency 60 FPS flight diagnostics, timeline scrubbing, and post-mission combat ratings.</p>
+                </div>
+                <div style={{ background: '#1e293b', padding: '0.6rem 1.2rem', borderRadius: '8px', border: '1px solid #334155' }}>
+                  <span style={{ fontSize: '0.8rem', color: '#94a3b8', textTransform: 'uppercase' }}>Last Combat Grade: </span>
+                  <strong style={{ color: '#4ade80', fontSize: '1.2rem', marginLeft: '0.5rem' }}>S+ RANK</strong>
+                </div>
+              </div>
+
+              {/* Telemetry Sensor Dashboard */}
+              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(260px, 1fr))', gap: '1.25rem', marginBottom: '2rem' }}>
+                <div style={{ background: '#1e293b', padding: '1.25rem', borderRadius: '8px', borderLeft: '4px solid #38bdf8' }}>
+                  <div style={{ color: '#38bdf8', fontSize: '0.8rem', fontWeight: 700 }}>SUBSYSTEM TELEMETRY</div>
+                  <div style={{ fontSize: '1.6rem', fontWeight: 800, color: '#ffffff', margin: '0.25rem 0' }}>850 m/s</div>
+                  <div style={{ color: '#94a3b8', fontSize: '0.85rem' }}>Average Rail Slug Ejection Velocity</div>
+                </div>
+
+                <div style={{ background: '#1e293b', padding: '1.25rem', borderRadius: '8px', borderLeft: '4px solid #fbbf24' }}>
+                  <div style={{ color: '#fbbf24', fontSize: '0.8rem', fontWeight: 700 }}>CORE HEAT SWEET SPOT</div>
+                  <div style={{ fontSize: '1.6rem', fontWeight: 800, color: '#ffffff', margin: '0.25rem 0' }}>45% - 75%</div>
+                  <div style={{ color: '#94a3b8', fontSize: '0.85rem' }}>Active Flush EMP Shockwave Window</div>
+                </div>
+
+                <div style={{ background: '#1e293b', padding: '1.25rem', borderRadius: '8px', borderLeft: '4px solid #4ade80' }}>
+                  <div style={{ color: '#4ade80', fontSize: '0.8rem', fontWeight: 700 }}>PARRY ACCURACY</div>
+                  <div style={{ fontSize: '1.6rem', fontWeight: 800, color: '#ffffff', margin: '0.25rem 0' }}>92.4%</div>
+                  <div style={{ color: '#94a3b8', fontSize: '0.85rem' }}>Directional Arc Interceptions</div>
+                </div>
+
+                <div style={{ background: '#1e293b', padding: '1.25rem', borderRadius: '8px', borderLeft: '4px solid #f43f5e' }}>
+                  <div style={{ color: '#f43f5e', fontSize: '0.8rem', fontWeight: 700 }}>POST-COMBAT SCRUBBING</div>
+                  <div style={{ fontSize: '1.6rem', fontWeight: 800, color: '#ffffff', margin: '0.25rem 0' }}>Timeline [R]</div>
+                  <div style={{ color: '#94a3b8', fontSize: '0.85rem' }}>Interactive in-game scrubber with [SPACE]</div>
+                </div>
+              </div>
+
+              {/* Environmental Hazard & Sensor Vision Modes */}
+              <h3 style={{ fontSize: '1.25rem', color: '#ffffff', margin: '0 0 1rem' }}>Multi-Spectrum Vision Filters [V Key]</h3>
+              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(240px, 1fr))', gap: '1rem' }}>
+                <div style={{ background: '#1e293b', padding: '1rem', borderRadius: '8px' }}>
+                  <div style={{ color: '#38bdf8', fontWeight: 700, marginBottom: '0.25rem' }}>1. STANDARD RGB OPTICS</div>
+                  <div style={{ color: '#94a3b8', fontSize: '0.85rem' }}>High-clarity cockpit telemetry with simulated CRT phosphor scanlines and dynamic chromatic aberration on hits.</div>
+                </div>
+                <div style={{ background: '#1e293b', padding: '1rem', borderRadius: '8px' }}>
+                  <div style={{ color: '#f97316', fontWeight: 700, marginBottom: '0.25rem' }}>2. THERMAL INFRARED (IR)</div>
+                  <div style={{ color: '#94a3b8', fontSize: '0.85rem' }}>Highlights overheating enemy reactors, weapon heatsinks, and plasma siphon thruster plumes across nebulae.</div>
+                </div>
+                <div style={{ background: '#1e293b', padding: '1rem', borderRadius: '8px' }}>
+                  <div style={{ color: '#4ade80', fontWeight: 700, marginBottom: '0.25rem' }}>3. MIL-NVG GEN-IV</div>
+                  <div style={{ color: '#94a3b8', fontSize: '0.85rem' }}>High-gain green phosphor night vision optimized for navigating dense asteroid fields and asteroid wreckage.</div>
+                </div>
+                <div style={{ background: '#1e293b', padding: '1rem', borderRadius: '8px' }}>
+                  <div style={{ color: '#a855f7', fontWeight: 700, marginBottom: '0.25rem' }}>4. TACTICAL WIREFRAME</div>
+                  <div style={{ color: '#94a3b8', fontSize: '0.85rem' }}>Reveals structural geometric bounds, projectile trajectory vectors, and gravity well event horizons.</div>
+                </div>
               </div>
             </div>
           </div>

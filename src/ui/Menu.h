@@ -19,6 +19,8 @@ public:
     static void DrawEndlessSummary(int wavesSurvived, float survivalTime, int nanitesEarned, bool extracted);
     static void DrawVictory(int totalCores, float runTimeSeconds);
     static void DrawCodex();
+    static void DrawMissionDebriefing(const struct PostCombatReport& report);
+    static void DrawFlightReplay(const class FlightRecorder& recorder, float animTime);
 };
 
 } // namespace Voidfall

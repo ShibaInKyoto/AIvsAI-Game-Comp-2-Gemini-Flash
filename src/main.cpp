@@ -66,6 +66,13 @@ int main(int argc, char** argv) {
     FiringRange firingRange;
     EndlessSurvival endless;
     RelicInventory relics;
+    DialogueEngine dialogue;
+    CampaignManager campaign;
+    FlightRecorder flightRecorder;
+    HazardEngine hazards;
+    ShaderPipeline shaderPipeline;
+    FlockingDirector flocking;
+    PostCombatReport lastReport;
 
     GameState state = cfg.autotestMode ? GameState::SECTOR_EXPEDITION : GameState::TITLE_SCREEN;
 
@@ -129,9 +136,13 @@ int main(int argc, char** argv) {
                         drones.AddDrone(DroneType::ATTACK_DRONE);
                         relics.Clear();
                         runTime = 0.0f;
+                        campaign.StartMission(1);
+                        dialogue.StartConversation(100);
+                        flightRecorder.StartRecording();
+                        hazards.Initialize(HazardType::ASTEROID_FIELD, cfg.screenWidth, cfg.screenHeight);
                         SaveSystem::GetProfile().totalRunsAttempted++;
                         SaveSystem::Save();
-                        state = GameState::SECTOR_MAP;
+                        state = GameState::SECTOR_EXPEDITION;
                     } else if (titleSelection == 1) {
                         // Endless Protocol (Survival Horde)
                         player.Reset(static_cast<MechFrame>(hangarFrame));
@@ -341,6 +352,22 @@ int main(int argc, char** argv) {
 
                 runTime += dt;
 
+                // Vision mode cycle
+                if (IsKeyPressed(KEY_V)) {
+                    shaderPipeline.CycleVisionMode();
+                    shaderPipeline.TriggerAberrationPulse(6.0f);
+                    AudioSynth::Play(SoundID::POWER_SHIFT);
+                }
+                shaderPipeline.Update(dt);
+
+                // Branching narrative dialogue handling
+                if (dialogue.IsActive()) {
+                    dialogue.Update(dt);
+                    if (input.menuUp) dialogue.SelectPrevChoice();
+                    if (input.menuDown) dialogue.SelectNextChoice();
+                    if (input.menuConfirm) dialogue.ConfirmOrAdvance();
+                }
+
                 // Adjust dynamic music intensity based on combat state
                 if (boss.IsActive() && !boss.IsDefeated()) {
                     MusicEngine::SetIntensity(MusicIntensity::BOSS_BATTLE);
@@ -356,6 +383,24 @@ int main(int argc, char** argv) {
                 enemies.Update(dt, player, projManager, particles);
                 boss.Update(dt, player, projManager, particles);
                 sector.Update(dt, player, enemies, boss, projManager, particles);
+
+                // Update environmental hazards (Asteroids, Singularity wells, Solar Storms)
+                Vec2 pPos = player.GetPosition();
+                Vec2 pVel = player.GetVelocity();
+                float pHeat = player.GetReactor().GetHeat();
+                float pShields = player.GetShield();
+                float pHp = player.GetHull();
+                hazards.Update(dt, pPos, pVel, pHeat, pShields, pHp);
+                player.SetPosition(pPos);
+                player.SetVelocity(pVel);
+
+                // Sample black box telemetry
+                flightRecorder.RecordSample(dt, player.GetPosition(), player.GetVelocity(), player.GetFacingAngle(),
+                                           player.GetHull(), player.GetShield(), player.GetReactor().GetHeat(),
+                                           input.firePrimaryHeld, input.fireOrdnanceHeld, player.IsDashing(),
+                                           enemies.GetActiveCount(),
+                                           boss.IsActive() ? (boss.GetHealth() / boss.GetMaxHealth()) : 0.0f);
+
                 projManager.Update(dt);
                 particles.Update(dt);
                 starfield.Update(player.GetVelocity(), dt);
@@ -367,6 +412,31 @@ int main(int argc, char** argv) {
                 if (sector.IsSectorComplete()) {
                     totalWavesCleared += sector.GetMaxWaves();
                     SaveSystem::AddNanites(player.GetNaniteCores());
+                    flightRecorder.StopRecording();
+                    lastReport = flightRecorder.GenerateCombatReport();
+                    campaign.FinalizeMission(true, runTime);
+                    state = GameState::MISSION_DEBRIEFING;
+                }
+
+                // Check Player Death
+                if (!player.IsAlive()) {
+                    camera.AddTrauma(0.85f);
+                    hitAberration = 1.0f;
+                    SaveSystem::AddNanites(player.GetNaniteCores());
+                    flightRecorder.StopRecording();
+                    lastReport = flightRecorder.GenerateCombatReport();
+                    state = GameState::MISSION_DEBRIEFING;
+                }
+                break;
+            }
+
+            case GameState::MISSION_DEBRIEFING: {
+                MusicEngine::SetIntensity(MusicIntensity::AMBIENT);
+                if (IsKeyPressed(KEY_R)) {
+                    flightRecorder.StartPlayback();
+                    state = GameState::FLIGHT_REPLAY;
+                    AudioSynth::Play(SoundID::UPGRADE_SELECT);
+                } else if (input.menuConfirm) {
                     if (sector.GetSectorIndex() >= 3) {
                         SaveSystem::GetProfile().totalVictories++;
                         SaveSystem::Save();
@@ -377,13 +447,24 @@ int main(int argc, char** argv) {
                         state = GameState::UPGRADE_DRAFT;
                     }
                 }
+                break;
+            }
 
-                // Check Player Death
-                if (!player.IsAlive()) {
-                    camera.AddTrauma(0.85f);
-                    hitAberration = 1.0f;
-                    SaveSystem::AddNanites(player.GetNaniteCores());
-                    state = GameState::GAME_OVER;
+            case GameState::FLIGHT_REPLAY: {
+                if (input.pause || input.menuBack) {
+                    state = GameState::MISSION_DEBRIEFING;
+                    break;
+                }
+                flightRecorder.UpdatePlayback(dt);
+                if (IsKeyPressed(KEY_SPACE)) {
+                    if (flightRecorder.IsPlaybackPaused()) flightRecorder.ResumePlayback();
+                    else flightRecorder.PausePlayback();
+                }
+                if (input.menuLeft) {
+                    flightRecorder.SeekPlayback(flightRecorder.GetPlaybackCursor() - 2.0f);
+                }
+                if (input.menuRight) {
+                    flightRecorder.SeekPlayback(flightRecorder.GetPlaybackCursor() + 2.0f);
                 }
                 break;
             }
@@ -444,6 +525,7 @@ int main(int argc, char** argv) {
             // Background Parallax Starfield & Sector Objects
             starfield.Draw(camera.GetPosition());
             sector.Draw();
+            hazards.Render();
             projManager.Draw();
             enemies.Draw();
             boss.Draw();
@@ -455,6 +537,12 @@ int main(int argc, char** argv) {
 
             // Cockpit Futuristic HUD
             HUD::Draw(player, boss, sector);
+
+            if (dialogue.IsActive()) {
+                dialogue.Render(GetScreenWidth(), GetScreenHeight());
+            }
+
+            shaderPipeline.RenderPostProcessingOverlay(GetScreenWidth(), GetScreenHeight());
 
             if (state == GameState::PAUSED) {
                 Menu::DrawPause();
@@ -475,6 +563,7 @@ int main(int argc, char** argv) {
 
             // HUD & Endless Hazard Top Banner
             HUD::Draw(player, boss, sector);
+            shaderPipeline.RenderPostProcessingOverlay(GetScreenWidth(), GetScreenHeight());
 
             int bannerW = 600;
             DrawRectangle(GetScreenWidth() / 2 - bannerW / 2, 12, bannerW, 36, {12, 18, 30, 230});
@@ -495,6 +584,10 @@ int main(int argc, char** argv) {
             HUD::Draw(player, boss, sector);
         } else if (state == GameState::SECTOR_MAP) {
             sectorMap.Draw(mapSelectedNode);
+        } else if (state == GameState::MISSION_DEBRIEFING) {
+            Menu::DrawMissionDebriefing(lastReport);
+        } else if (state == GameState::FLIGHT_REPLAY) {
+            Menu::DrawFlightReplay(flightRecorder, animTime);
         } else if (state == GameState::ANOMALY_EVENT) {
             const auto& ev = sectorMap.GetCurrentEvent();
             DrawRectangle(0, 0, GetScreenWidth(), GetScreenHeight(), {8, 12, 22, 245});
